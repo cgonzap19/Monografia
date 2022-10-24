@@ -1,0 +1,81 @@
+# Asigna la base de datos a un objeto
+x <- Base_datos
+# Clasificación de cada categoría como factor
+x$Tipo_canal <- as.factor(x$Tipo_canal)
+x$Regional <- as.factor(x$Regional)
+x$Tipo_afiliado <- as.factor(x$Tipo_afiliado)
+x$Edad <- as.factor(x$Edad)
+x$IBC <- as.factor(x$IBC)
+x$Genero <- as.factor(x$Genero)
+x$Tiempo_aportes <- as.factor(x$Tiempo_aportes)
+summary(x)
+
+# Construye el Análisis de Correspondencia Múltiples
+library(FactoMineR)
+mca <- MCA(x, graph=FALSE)
+
+# Eigenvalues
+library(factoextra)
+eigenv <- get_eigenvalue(mca)
+eigenv
+fviz_screeplot(mca, addlabels=T, xlab="Dimensiones", ylab="Porcentaje de varianza explicada", cex.sub=3, barcol="rosybrown3", barfill="rosybrown1", ggtheme = theme_minimal())
+
+# Correlación variables - Dimensiones
+fviz_mca_var(mca, choice="mca.cor", geom="point", col.var = "rosybrown4", ggtheme = theme_minimal())
+
+# Correlación variables (por categoría) - Dimensiones
+library("corrplot")
+fviz_mca_var(mca, col.var="contrib", gradient.cols =c("#00AFBB","#E7B800","#FC4E07"))
+
+# Agrupación por medio de la categoría "Tipo de afiliado"
+fviz_mca_ind(mca, label="none", habillage = x$Tipo_afiliado, addEllipses = T,ellipse.type="confidence")
+
+# Descripción de las dimensiones
+mca.desc <- dimdesc(mca)
+mca.desc[[1]]
+mca.desc[[2]]
+
+# Agrupamiento técnica cluster
+library(cluster)
+library(FactoClass)
+library(factoextra)
+y <- BDdep
+dist <- daisy(y, metric="gower",stand=F)
+
+# Determinando número óptimo de cluster:
+fviz_nbclust(x = y, FUNcluster = hcut, method = "wss", k.max = 6,diss = dist)
+
+# Cluster metodo average
+hc1 <- hclust(dist, method="ave")
+plot(hc1)
+aux1 <- cutree(hc1, k=4)
+fviz_cluster(list(data=BDdep, cluster=aux1))
+clust1 <- cutree(hc1, k = 5)
+
+
+# Cluster metodo complete
+hc2 <- hclust(dist, method="complete")
+plot(hc2)
+rect.hclust(hc2, k=5, border="rosybrown3")
+clust2 <- cutree(hc2, k = 5)
+
+# Cluster método Ward'S
+hc3 <- ward.cluster(dist, h.clust=1)
+plot(hc3)
+clust4 <- cutree(hc3, k = 5)
+
+
+# Inercia inter e intra grupo
+library(fdm2id)
+a1 <- intern.intraclass(clust1, BDdep, type=c("global","cluster"))
+a2 <- intern.interclass(clust1, BDdep, type=c("global","cluster"))
+
+b1 <- intern.intraclass(clust2, BDdep, type=c("global","cluster"))
+b2 <- intern.interclass(clust2, BDdep, type=c("global","cluster"))
+
+c1 <- intern.intraclass(clust3, BDdep, type=c("global","cluster"))
+c2 <- intern.interclass(clust3, BDdep, type=c("global","cluster"))
+
+
+inercia.total <- rbind(c(a1,b1,c1,d1,a2,b2,c2,d2))
+
